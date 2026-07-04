@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Playwright
+.playwright/
+playwright-report/
+test-results/
+blob-report/
+
+# Generated test output (per e2e skill conventions)
+reports/
+logs/
+
+# Env / secrets
+.env
+.env.local
+
+# Build output
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+*.code-workspace
+
+# Logs
+*.log
+npm-debug.log*

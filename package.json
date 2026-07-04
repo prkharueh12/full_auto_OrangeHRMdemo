@@ -1,0 +1,17 @@
+{
+  "name": "playwright-cli-agents-template",
+  "version": "1.0.0",
+  "description": "Reusable Playwright E2E test template with Claude Code agents/skills for planning, generating, and healing tests.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "keywords": ["playwright", "e2e", "testing", "template", "claude-code"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.1.0",
+    "typescript": "^6.0.3"
+  }
+}
