@@ -9,10 +9,14 @@ on:
   workflow_dispatch:
     inputs:
       test_filter:
-        description: 'Which tests to run'
+        description: 'Which tests to run (ignored if a custom pattern is set below)'
         type: choice
         options: [smoke, regression, all]
         default: smoke
+      grep_pattern:
+        description: 'Optional: custom -g pattern (matches test title text). Overrides the dropdown above.'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -119,7 +123,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      SUITE_LABEL: Manual (${{ inputs.test_filter }})
+      SUITE_LABEL: Manual (${{ inputs.grep_pattern != '' && inputs.grep_pattern || inputs.test_filter }})
 
     steps:
       - uses: actions/checkout@v4
@@ -133,16 +137,21 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      # continue-on-error only for 'regression', since no @regression-tagged
-      # tests exist yet — remove that condition once real ones are added.
+      # continue-on-error only for the plain 'regression' dropdown pick (no
+      # custom pattern), since no @regression-tagged tests exist yet — remove
+      # this condition once real ones are added.
       - name: Run selected tests
-        continue-on-error: ${{ inputs.test_filter == 'regression' }}
+        continue-on-error: ${{ inputs.grep_pattern == '' && inputs.test_filter == 'regression' }}
         run: |
-          case "${{ inputs.test_filter }}" in
-            smoke) npx playwright test --grep @smoke ;;
-            regression) npx playwright test --grep @regression ;;
-            all) npx playwright test ;;
-          esac
+          if [ -n "${{ inputs.grep_pattern }}" ]; then
+            npx playwright test -g "${{ inputs.grep_pattern }}"
+          else
+            case "${{ inputs.test_filter }}" in
+              smoke) npx playwright test --grep @smoke ;;
+              regression) npx playwright test --grep @regression ;;
+              all) npx playwright test ;;
+            esac
+          fi
         env:
           BASE_URL: ${{ vars.BASE_URL }}
           ORANGEHRM_USERNAME: ${{ secrets.ORANGEHRM_USERNAME }}
