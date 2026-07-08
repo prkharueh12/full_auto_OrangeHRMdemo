@@ -7,7 +7,8 @@
     "test:smoke": "playwright test --grep @smoke",
     "test:regression": "playwright test --grep @regression",
     "test:report": "playwright show-report reports/html-report",
-    "notify:slack": "tsx utils/notify-slack.ts"
+    "notify:slack": "tsx utils/notify-slack.ts",
+    "summary": "tsx utils/write-summary.ts"
   },
   "keywords": ["playwright", "e2e", "testing", "orangehrm", "claude-code"],
   "author": "",

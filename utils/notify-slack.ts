@@ -1,50 +1,4 @@
-import { readFileSync } from 'node:fs';
-
-interface PlaywrightSpec {
-  title: string;
-  ok: boolean;
-  file: string;
-  line: number;
-}
-
-interface PlaywrightSuite {
-  specs: PlaywrightSpec[];
-  suites?: PlaywrightSuite[];
-}
-
-interface PlaywrightReport {
-  suites: PlaywrightSuite[];
-  stats: {
-    startTime: string;
-    duration: number;
-    expected: number;
-    skipped: number;
-    unexpected: number;
-    flaky: number;
-  };
-}
-
-function collectFailedTitles(suites: PlaywrightSuite[]): string[] {
-  const failed: string[] = [];
-
-  for (const suite of suites) {
-    for (const spec of suite.specs) {
-      if (!spec.ok) {
-        failed.push(`${spec.file}:${spec.line} - ${spec.title}`);
-      }
-    }
-
-    if (suite.suites) {
-      failed.push(...collectFailedTitles(suite.suites));
-    }
-  }
-
-  return failed;
-}
-
-function formatDuration(ms: number): string {
-  return `${(ms / 1000).toFixed(1)}s`;
-}
+import { collectFailedTitles, formatDuration, readReport } from './parse-report';
 
 async function postToSlack(webhookUrl: string, blocks: Record<string, unknown>[]): Promise<void> {
   const response = await fetch(webhookUrl, {
@@ -74,10 +28,8 @@ async function main(): Promise<void> {
   const event = process.env.GITHUB_EVENT_NAME ?? 'unknown';
   const suiteLabel = process.env.SUITE_LABEL ?? 'Test Suite';
 
-  let report: PlaywrightReport;
-  try {
-    report = JSON.parse(readFileSync('reports/results.json', 'utf8'));
-  } catch {
+  const report = readReport('reports/results.json');
+  if (!report) {
     // No report file means the run crashed before Playwright produced any results
     // (e.g. a config error or a failed `npm ci`) — still alert, just without stats.
     await postToSlack(webhookUrl, [

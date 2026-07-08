@@ -1,4 +1,5 @@
-name: Playwright Smoke Tests
+name: OrangeHRMdemo Playwright Test
+run-name: "OrangeHRMdemo Playwright Test (${{ github.event_name == 'workflow_dispatch' && inputs.test_filter || github.event_name == 'pull_request' && 'PR' || 'push' }})"
 
 on:
   push:
@@ -13,11 +14,20 @@ on:
         options: [smoke, regression, all]
         default: smoke
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   smoke:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      SUITE_LABEL: Smoke Tests
 
     steps:
       - uses: actions/checkout@v4
@@ -46,18 +56,23 @@ jobs:
             test-results/
           retention-days: 14
 
+      - name: Write job summary
+        if: always()
+        run: npm run summary
+
       - name: Notify Slack
         if: always()
         run: npm run notify:slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SUITE_LABEL: Smoke Tests
 
   regression:
     needs: smoke
     if: success() && github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      SUITE_LABEL: Regression Tests
 
     steps:
       - uses: actions/checkout@v4
@@ -89,17 +104,22 @@ jobs:
             test-results/
           retention-days: 14
 
+      - name: Write job summary
+        if: always()
+        run: npm run summary
+
       - name: Notify Slack
         if: always()
         run: npm run notify:slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SUITE_LABEL: Regression Tests
 
   manual:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      SUITE_LABEL: Manual (${{ inputs.test_filter }})
 
     steps:
       - uses: actions/checkout@v4
@@ -136,3 +156,7 @@ jobs:
             reports/html-report/
             test-results/
           retention-days: 14
+
+      - name: Write job summary
+        if: always()
+        run: npm run summary
