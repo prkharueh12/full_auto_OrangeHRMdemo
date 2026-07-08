@@ -1,0 +1,89 @@
+name: Playwright Smoke Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run test:smoke
+        env:
+          BASE_URL: ${{ vars.BASE_URL }}
+          ORANGEHRM_USERNAME: ${{ secrets.ORANGEHRM_USERNAME }}
+          ORANGEHRM_PASSWORD: ${{ secrets.ORANGEHRM_PASSWORD }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: |
+            reports/html-report/
+            test-results/
+          retention-days: 14
+
+      - name: Notify Slack
+        if: always()
+        run: npm run notify:slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SUITE_LABEL: Smoke Tests
+
+  regression:
+    needs: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      # TODO: remove continue-on-error once real @regression-tagged tests exist.
+      # Right now there are none, so this step would otherwise fail CI with "No tests found".
+      - run: npm run test:regression
+        continue-on-error: true
+        env:
+          BASE_URL: ${{ vars.BASE_URL }}
+          ORANGEHRM_USERNAME: ${{ secrets.ORANGEHRM_USERNAME }}
+          ORANGEHRM_PASSWORD: ${{ secrets.ORANGEHRM_PASSWORD }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-regression
+          path: |
+            reports/html-report/
+            test-results/
+          retention-days: 14
+
+      - name: Notify Slack
+        if: always()
+        run: npm run notify:slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SUITE_LABEL: Regression Tests

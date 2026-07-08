@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { env } from './config/env';
 
 export default defineConfig({
   testDir: './tests',
@@ -8,11 +9,13 @@ export default defineConfig({
   reporter: [
     ['html', { outputFolder: 'reports/html-report', open: 'never' }],
     ['list'],
+    ['json', { outputFile: 'reports/results.json' }],
   ],
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: env.baseUrl,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    video: 'on-first-retry',
   },
   expect: {
     toHaveScreenshot: {
