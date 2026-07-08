@@ -1,17 +1,25 @@
 {
-  "name": "playwright-cli-agents-template",
+  "name": "full-auto-orangehrm-demo",
   "version": "1.0.0",
-  "description": "Reusable Playwright E2E test template with Claude Code agents/skills for planning, generating, and healing tests.",
+  "description": "Playwright + TypeScript E2E test suite for the OrangeHRM demo app, built with Claude Code agents/skills via the Page Object Model pattern.",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:regression": "playwright test --grep @regression",
+    "test:report": "playwright show-report reports/html-report",
+    "notify:slack": "tsx utils/notify-slack.ts"
   },
-  "keywords": ["playwright", "e2e", "testing", "template", "claude-code"],
+  "keywords": ["playwright", "e2e", "testing", "orangehrm", "claude-code"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@types/node": "^26.1.0",
+    "tsx": "^4.19.2",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
   }
 }
