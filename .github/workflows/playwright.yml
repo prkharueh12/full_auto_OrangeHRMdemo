@@ -1,4 +1,5 @@
-name: Playwright Smoke Tests
+name: OrangeHRMdemo Playwright Test
+run-name: "OrangeHRMdemo Playwright Test (${{ github.event_name == 'workflow_dispatch' && inputs.test_filter || github.event_name == 'pull_request' && 'PR' || 'push' }})"
 
 on:
   push:
@@ -6,11 +7,27 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      test_filter:
+        description: 'Which tests to run'
+        type: choice
+        options: [smoke, regression, all]
+        default: smoke
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   smoke:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      SUITE_LABEL: Smoke Tests
 
     steps:
       - uses: actions/checkout@v4
@@ -39,17 +56,23 @@ jobs:
             test-results/
           retention-days: 14
 
+      - name: Write job summary
+        if: always()
+        run: npm run summary
+
       - name: Notify Slack
         if: always()
         run: npm run notify:slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SUITE_LABEL: Smoke Tests
 
   regression:
     needs: smoke
+    if: success() && github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      SUITE_LABEL: Regression Tests
 
     steps:
       - uses: actions/checkout@v4
@@ -81,9 +104,59 @@ jobs:
             test-results/
           retention-days: 14
 
+      - name: Write job summary
+        if: always()
+        run: npm run summary
+
       - name: Notify Slack
         if: always()
         run: npm run notify:slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SUITE_LABEL: Regression Tests
+
+  manual:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUITE_LABEL: Manual (${{ inputs.test_filter }})
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      # continue-on-error only for 'regression', since no @regression-tagged
+      # tests exist yet — remove that condition once real ones are added.
+      - name: Run selected tests
+        continue-on-error: ${{ inputs.test_filter == 'regression' }}
+        run: |
+          case "${{ inputs.test_filter }}" in
+            smoke) npx playwright test --grep @smoke ;;
+            regression) npx playwright test --grep @regression ;;
+            all) npx playwright test ;;
+          esac
+        env:
+          BASE_URL: ${{ vars.BASE_URL }}
+          ORANGEHRM_USERNAME: ${{ secrets.ORANGEHRM_USERNAME }}
+          ORANGEHRM_PASSWORD: ${{ secrets.ORANGEHRM_PASSWORD }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-manual
+          path: |
+            reports/html-report/
+            test-results/
+          retention-days: 14
+
+      - name: Write job summary
+        if: always()
+        run: npm run summary
