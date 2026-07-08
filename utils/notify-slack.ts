@@ -46,6 +46,20 @@ function formatDuration(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+async function postToSlack(webhookUrl: string, blocks: Record<string, unknown>[]): Promise<void> {
+  const response = await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ blocks }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Slack webhook responded with ${response.status}: ${await response.text()}`);
+  }
+
+  console.log('Slack notification sent.');
+}
+
 async function main(): Promise<void> {
   const webhookUrl = process.env.SLACK_WEBHOOK_URL;
   if (!webhookUrl) {
@@ -53,21 +67,46 @@ async function main(): Promise<void> {
     return;
   }
 
-  const report: PlaywrightReport = JSON.parse(readFileSync('reports/results.json', 'utf8'));
-  const { stats } = report;
-  const failedTitles = collectFailedTitles(report.suites);
-
-  const total = stats.expected + stats.unexpected + stats.skipped + stats.flaky;
   const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
   const branch = process.env.GITHUB_REF_NAME ?? 'unknown';
   const commit = (process.env.GITHUB_SHA ?? 'unknown').slice(0, 7);
   const actor = process.env.GITHUB_ACTOR ?? 'unknown';
   const event = process.env.GITHUB_EVENT_NAME ?? 'unknown';
+  const suiteLabel = process.env.SUITE_LABEL ?? 'Test Suite';
+
+  let report: PlaywrightReport;
+  try {
+    report = JSON.parse(readFileSync('reports/results.json', 'utf8'));
+  } catch {
+    // No report file means the run crashed before Playwright produced any results
+    // (e.g. a config error or a failed `npm ci`) — still alert, just without stats.
+    await postToSlack(webhookUrl, [
+      {
+        type: 'header',
+        text: { type: 'plain_text', text: `❌ ${suiteLabel} Failed to Run` },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `No test results were produced — the run likely crashed before any tests executed (e.g. a config or install error).\n*Branch:* ${branch}\n*Commit:* ${commit}\n*Triggered by:* ${actor} (${event})`,
+        },
+      },
+      {
+        type: 'context',
+        elements: [{ type: 'mrkdwn', text: `<${runUrl}|View full run in GitHub Actions>` }],
+      },
+    ]);
+    return;
+  }
+
+  const { stats } = report;
+  const failedTitles = collectFailedTitles(report.suites);
+  const total = stats.expected + stats.unexpected + stats.skipped + stats.flaky;
   const startedAt = new Date(stats.startTime).toUTCString();
 
   const resultEmoji = stats.unexpected > 0 ? '❌' : '✅';
   const resultText = stats.unexpected > 0 ? 'Failed' : 'Passed';
-  const suiteLabel = process.env.SUITE_LABEL ?? 'Test Suite';
 
   const blocks: Record<string, unknown>[] = [
     {
@@ -105,17 +144,7 @@ async function main(): Promise<void> {
     elements: [{ type: 'mrkdwn', text: `<${runUrl}|View full run in GitHub Actions>` }],
   });
 
-  const response = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ blocks }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Slack webhook responded with ${response.status}: ${await response.text()}`);
-  }
-
-  console.log('Slack notification sent.');
+  await postToSlack(webhookUrl, blocks);
 }
 
 main().catch((error) => {
