@@ -33,12 +33,14 @@ npm run test:report       # open the last HTML report
 tests/
 ├── ui/
 │   ├── smoke/         # fast, critical-path checks tagged @smoke
-│   └── e2e/           # deeper flows, tagged @regression (empty for now)
+│   ├── regression/    # per-module regression checks tagged @regression
+│   └── e2e/           # deeper multi-module flows (empty for now)
 ├── api/                # API test specs
 └── performance/        # Performance/load test specs
 pages/                  # Page Object Model classes (locators + interaction methods)
 fixtures/               # Reusable setup/teardown (e.g. auth.fixture.ts)
-utils/                  # Helper functions and constants (e.g. notify-slack.ts)
+utils/                  # Helper functions and constants (e.g. unique.ts)
+utils/report-pipeline/  # Parses reports/results.json → Slack notification + GitHub Step Summary
 config/                 # Environment config, loaded from .env
 test-data/              # Static test data as JSON (no locators)
 __mocks__/api/          # API mock definitions

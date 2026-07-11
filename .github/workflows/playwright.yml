@@ -94,10 +94,7 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      # TODO: remove continue-on-error once real @regression-tagged tests exist.
-      # Right now there are none, so this step would otherwise fail CI with "No tests found".
       - run: npm run test:regression
-        continue-on-error: true
         env:
           BASE_URL: ${{ vars.BASE_URL }}
           ORANGEHRM_USERNAME: ${{ secrets.ORANGEHRM_USERNAME }}
@@ -141,11 +138,7 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      # continue-on-error only for the plain 'regression' dropdown pick (no
-      # custom pattern), since no @regression-tagged tests exist yet — remove
-      # this condition once real ones are added.
       - name: Run selected tests
-        continue-on-error: ${{ inputs.grep_pattern == '' && inputs.test_filter == 'regression' }}
         run: |
           if [ -n "${{ inputs.grep_pattern }}" ]; then
             npx playwright test -g "${{ inputs.grep_pattern }}"
