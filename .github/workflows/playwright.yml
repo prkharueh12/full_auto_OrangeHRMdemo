@@ -1,11 +1,15 @@
 name: OrangeHRMdemo Playwright Test
-run-name: "OrangeHRMdemo Playwright Test (${{ github.event_name == 'workflow_dispatch' && inputs.test_filter || github.event_name == 'pull_request' && 'PR' || 'push' }})"
+run-name: "OrangeHRMdemo Playwright Test (${{ github.event_name == 'workflow_dispatch' && inputs.test_filter || github.event_name == 'pull_request' && 'PR' || github.event_name == 'schedule' && 'scheduled' || 'push' }})"
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # Mon/Wed/Fri 07:00 UTC = 2am EST. Fixed UTC offset (not DST-adjusted),
+    # so this runs at 3am Eastern during EDT (mid-March to early November).
+    - cron: '0 7 * * 1,3,5'
   workflow_dispatch:
     inputs:
       test_filter:
