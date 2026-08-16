@@ -8,6 +8,12 @@ playwright-report/
 test-results/
 blob-report/
 
+# Setup -> teardown hand-off state (per-run, machine-local)
+.auth/
+
+# Local planning docs (not tracked; key findings should go in the PR description instead)
+test-plans/
+
 # Generated test output (per e2e skill conventions)
 reports/
 logs/
