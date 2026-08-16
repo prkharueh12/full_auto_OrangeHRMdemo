@@ -1,3 +1,15 @@
 {
-  "existingUsername": "Admin"
+  "existingUsername": "Admin",
+  "setupEmployee": {
+    "firstName": "David",
+    "middleName": "",
+    "lastName": "Beckham"
+  },
+  "newUser": {
+    "usernamePrefix": "PWtest",
+    "password": "test123",
+    "userRole": "Admin",
+    "status": "Enabled",
+    "employeeName": "David Beckham"
+  }
 }

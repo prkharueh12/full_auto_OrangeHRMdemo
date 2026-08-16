@@ -1,6 +1,6 @@
-import { test, expect } from '../../../fixtures/auth.fixture';
-import { AdminUsersPage } from '../../../pages/admin-users.page';
-import admin from '../../../test-data/admin.json';
+import { test, expect } from '../../../../fixtures/auth.fixture';
+import { AdminUsersPage } from '../../../../pages/admin-users.page';
+import admin from '../../../../test-data/admin.json';
 
 test.describe('Admin - System users', { tag: '@regression' }, () => {
   test('search system users by username returns the matching user', async ({
