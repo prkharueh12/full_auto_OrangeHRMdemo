@@ -1,0 +1,9 @@
+services:
+  tests:
+    build: .
+    image: orangehrm-tests
+    env_file: .env
+    ipc: host
+    volumes:
+      - ./reports:/app/reports
+      - ./test-results:/app/test-results

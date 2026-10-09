@@ -1,0 +1,29 @@
+# Dependencies (the image runs its own npm ci for Linux)
+node_modules
+
+# Env / secrets (passed in at run time, never baked into the image)
+.env
+.env.local
+
+# Setup -> teardown hand-off state (per-run, machine-local)
+.auth
+
+# Generated test output
+reports
+test-results
+playwright-report
+blob-report
+logs
+*.log
+
+# Playwright local tooling
+.playwright
+.playwright-cli
+
+# Not needed to run tests
+.git
+.github
+.vscode
+.claude
+test-plans
+*.code-workspace

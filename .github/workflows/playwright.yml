@@ -33,6 +33,9 @@ jobs:
   smoke:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --ipc=host
     timeout-minutes: 15
     env:
       SUITE_LABEL: Smoke Tests
@@ -40,14 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: npm
-
       - run: npm ci
-
-      - run: npx playwright install --with-deps chromium
 
       - run: npm run test:smoke
         env:
@@ -77,6 +73,9 @@ jobs:
     needs: smoke
     if: success() && github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --ipc=host
     timeout-minutes: 30
     env:
       SUITE_LABEL: Regression Tests
@@ -84,14 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: npm
-
       - run: npm ci
-
-      - run: npx playwright install --with-deps chromium
 
       - run: npm run test:regression
         env:
@@ -120,6 +112,9 @@ jobs:
   manual:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --ipc=host
     timeout-minutes: 30
     env:
       SUITE_LABEL: Manual (${{ inputs.grep_pattern != '' && inputs.grep_pattern || inputs.test_filter }})
@@ -127,14 +122,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: npm
-
       - run: npm ci
-
-      - run: npx playwright install --with-deps chromium
 
       - name: Run selected tests
         run: |
