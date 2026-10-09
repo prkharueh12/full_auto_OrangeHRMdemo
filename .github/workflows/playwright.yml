@@ -51,7 +51,6 @@ jobs:
 
       - run: npm run test:smoke
         env:
-          BASE_URL: ${{ vars.BASE_URL }}
           ORANGEHRM_USERNAME: ${{ secrets.ORANGEHRM_USERNAME }}
           ORANGEHRM_PASSWORD: ${{ secrets.ORANGEHRM_PASSWORD }}
 
@@ -96,7 +95,6 @@ jobs:
 
       - run: npm run test:regression
         env:
-          BASE_URL: ${{ vars.BASE_URL }}
           ORANGEHRM_USERNAME: ${{ secrets.ORANGEHRM_USERNAME }}
           ORANGEHRM_PASSWORD: ${{ secrets.ORANGEHRM_PASSWORD }}
 
@@ -150,7 +148,6 @@ jobs:
             esac
           fi
         env:
-          BASE_URL: ${{ vars.BASE_URL }}
           ORANGEHRM_USERNAME: ${{ secrets.ORANGEHRM_USERNAME }}
           ORANGEHRM_PASSWORD: ${{ secrets.ORANGEHRM_PASSWORD }}
 
