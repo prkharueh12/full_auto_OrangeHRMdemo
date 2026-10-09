@@ -22,10 +22,25 @@ Fill in `.env` with the target app URL and login credentials (see `.env.example`
 ```bash
 npm test                  # run all tests
 npm run test:smoke        # run only tests tagged @smoke
-npm run test:regression   # run only tests tagged @regression (none exist yet)
+npm run test:regression   # run only tests tagged @regression
 npx playwright test --ui  # interactive UI mode
 npm run test:report       # open the last HTML report
 ```
+
+## Running with Docker
+
+Runs the suite in the official Playwright image, the same environment CI uses. You only need [Docker Desktop](https://www.docker.com/products/docker-desktop/) (on Windows, with WSL 2); you don't need Node or browsers.
+
+```bash
+docker compose run --rm --build tests npm run test:smoke       # smoke
+docker compose run --rm --build tests npm run test:regression  # regression
+docker compose run --rm --build tests                          # all tests
+npm run test:report                                            # open the report
+```
+
+Credentials come from `.env` at run time and are never baked into the image. Reports are written to `reports/` and `test-results/` on your machine.
+
+**Upgrading Playwright:** the version must match in three places: `package.json` (exact, no `^`), the `Dockerfile` `FROM` tag, and the `container.image` tag in `.github/workflows/playwright.yml`.
 
 ## Project structure
 
@@ -52,10 +67,10 @@ Visual regression tests are tagged `@visual` in the test title.
 
 ## CI (GitHub Actions)
 
-`.github/workflows/playwright.yml` runs on every push and pull request to `main`:
+`.github/workflows/playwright.yml` runs on every push and pull request to `main`. Every job runs inside the `mcr.microsoft.com/playwright` container image, so browsers and their OS dependencies come preinstalled.
 
 - **`smoke`** job — installs dependencies, runs `npm run test:smoke`, uploads the HTML report + test-results as artifacts, then posts a result summary to Slack (pass/fail counts, duration, branch, commit, failed test names, and a link to the run).
-- **`regression`** job — runs after `smoke` succeeds (`needs: smoke`). Currently a scaffold: no `@regression` tests exist yet, so its test step uses `continue-on-error: true` to avoid failing CI on "No tests found." Remove that once real regression tests are added.
+- **`regression`** job — runs after `smoke` succeeds (`needs: smoke`), runs `npm run test:regression`, and uploads its own report and Slack summary.
 
 **Required GitHub repo secrets:**
 | Secret | Purpose |
@@ -63,10 +78,7 @@ Visual regression tests are tagged `@visual` in the test title.
 | `ORANGEHRM_USERNAME` / `ORANGEHRM_PASSWORD` | Login credentials — `config/env.ts` throws if these aren't set, so CI will fail without them |
 | `SLACK_WEBHOOK_URL` | Slack Incoming Webhook URL for the Notify Slack step |
 
-**Optional repo variable:**
-| Variable | Purpose |
-|---|---|
-| `BASE_URL` | Target app URL — falls back to the OrangeHRM demo URL if unset |
+CI uses the default target URL from `config/env.ts` (the OrangeHRM demo).
 
 ## Claude Code agents
 
